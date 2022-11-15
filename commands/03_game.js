@@ -5,12 +5,52 @@ import Game from '../game/Game.js';
 const sendMessageError = (channel, user, error) => {
   channel.send({ embeds: [Bot.createEmbed()
       .setColor(0xff0000)
-      .setTitle(`<@${user.id}>. ` + error)
+      .setTitle(`${user.username}. ` + error)
+      .setDescription(`<@${user.id}>`)
     ], ephemeral: true })
     .then((message) => {
       setTimeout(() => {
         message.delete();
       }, 5000);
+    })
+}
+
+const sendSpecialMessageJoin = (channel, userJoined) => {
+  channel.send({ embeds: [Bot.createEmbed()
+      .setColor(0x00ffff)
+      .setTitle(`Вы присоединились как гей`)
+      .setDescription(`<@${userJoined.id}>`)
+    ], ephemeral: true })
+    .then((message) => {
+      setTimeout(() => {
+        message.delete();
+      }, 10000);
+    })
+}
+
+const sendMessageLeave = (channel, userLeaved) => {
+  channel.send({ embeds: [Bot.createEmbed()
+      .setColor(0x00ffff)
+      .setTitle(`Вы решили сдаться...`)
+      .setDescription(`<@${userLeaved.id}>`)
+    ], ephemeral: true })
+    .then((message) => {
+      setTimeout(() => {
+        message.delete();
+      }, 10000);
+    })
+}
+
+const sendMessageKick = (channel, user, userKicked) => {
+  channel.send({ embeds: [Bot.createEmbed()
+      .setColor(0x00ffff)
+      .setTitle(`Вас кикнули из игры...`)
+      .setDescription(`<@${userKicked.id}>`)
+    ], ephemeral: true })
+    .then((message) => {
+      setTimeout(() => {
+        message.delete();
+      }, 10000);
     })
 }
 
@@ -46,6 +86,18 @@ Command.add('создатьИгру', 'Данная команда создас�
         Bot.createButton()
           .setCustomId('join')
           .setLabel('Присоединиться'),
+        Bot.createButton()
+          .setCustomId('join-2')
+          .setLabel('Присоединиться как гей'),
+        Bot.createButton()
+          .setCustomId('leave')
+          .setLabel('Покинуть'),
+        Bot.createButton()
+          .setCustomId('start')
+          .setLabel('Начать'),
+        Bot.createButton()
+          .setCustomId('delete')
+          .setLabel('Удалить'),
       );
 
       const embedDescription = Bot.createFields([
@@ -64,7 +116,6 @@ Command.add('создатьИгру', 'Данная команда создас�
       ])
 
       const embed = Bot.createEmbed()
-        .setColor(0xff0000)
         .setTitle('Игра успешно создана')
         .setDescription(embedDescription);
 
@@ -76,6 +127,24 @@ Command.add('создатьИгру', 'Данная команда создас�
             switch (buttonInteraction.customId) {
               case 'join':
                 game.joinPlayer(buttonInteraction.user)
+                  .catch((error) => {
+                    sendMessageError(message.channel, buttonInteraction.user, error);
+                  });
+                break;
+              case 'join-2':
+                game.joinPlayer(buttonInteraction.user)
+                  .then(() => {
+                    sendSpecialMessageJoin(message.channel, buttonInteraction.user);
+                  })
+                  .catch((error) => {
+                    sendMessageError(message.channel, buttonInteraction.user, error);
+                  });
+                break;
+              case 'leave':
+                game.leave(buttonInteraction.user)
+                  .then(() => {
+                    sendMessageLeave(message.channel, buttonInteraction.user);
+                  })
                   .catch((error) => {
                     sendMessageError(message.channel, buttonInteraction.user, error);
                   });

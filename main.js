@@ -71,7 +71,7 @@ export default class Bot {
 
   static createEmbed() {
     return new EmbedBuilder()
-        .setColor(0x444444)
+        .setColor(0x641d90)
         .setTimestamp()
         .setFooter({ text: Bot.username, iconURL: Bot.avatar });
   }

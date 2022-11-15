@@ -1,6 +1,15 @@
-export default class Game {
+import { EventEmitter } from 'node:events';
+
+const gameStates = {
+  waiting: 0,
+  staring: 1,
+  middle: 2,
+}
+
+export default class Game extends EventEmitter {
   static #freeId = 0;
   static games = {};
+  state = gameState.waiting;
   words = [];
 
   /**
@@ -8,6 +17,7 @@ export default class Game {
    * @param {User} owner
    */
   constructor(serverId, owner) {
+    super();
     this.serverId = serverId;
     this.playerOwner = owner;
     this.players = [];
@@ -35,7 +45,7 @@ export default class Game {
   kickPlayer(player, playerOnKick) {
     return new Promise((resolve, reject) => {
       if (this.playerOwner.id !== player.id) return reject('Вы не владелец игры');
-      if (this.findPlayer(playerOnKick.id) === undefined) reject('Данного игрока нет в игре');
+      if (this.findPlayer(playerOnKick.id) === -1) reject('Данного игрока нет в игре');
       if (this.playerOwner.id === playerOnKick.id) reject('Вы не можете кикнуть сами себя');
 
       const indexPlayer = this.findPlayer(playerOnKick.id);
@@ -44,6 +54,30 @@ export default class Game {
 
       resolve();
     })
+  }
+
+  /**
+   * @param {User} playerOnLeave
+   */
+  leave(playerOnLeave) {
+    return new Promise((resolve, reject) => {
+      if (this.playerOwner.id === playerOnLeave.id) return reject('Вы владелец игры. Вы можете только удалить текущую игру');
+      if (this.findPlayer(playerOnLeave.id) === -1) reject('Данного игрока нет в игре');
+
+      const indexPlayer = this.findPlayer(playerOnLeave.id);
+
+      this.players.splice(indexPlayer, 1);
+
+      resolve();
+    })
+  }
+
+  stateHandler() {
+  }
+
+  changeState(newState) {
+    this.stateHandler();
+    this.state = newState;
   }
 
   static findPlayer(playerId) {
