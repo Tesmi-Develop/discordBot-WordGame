@@ -1,27 +1,29 @@
 import { EventEmitter } from 'node:events';
-
-const gameStates = {
-  waiting: 0,
-  staring: 1,
-  middle: 2,
-}
+import Starting from "./states/Starting.js";
 
 export default class Game extends EventEmitter {
   static #freeId = 0;
   static games = {};
-  state = gameState.waiting;
+  static blacklistLetters = ['ь', 'ъ', 'й'];
+  playerIndex = -1;
   words = [];
+  letter = '';
+  is_starting = false;
 
   /**
-   * @param {number} serverId
+   * @param {Channel} channel
    * @param {User} owner
    */
-  constructor(serverId, owner) {
+  constructor(channel, owner) {
     super();
-    this.serverId = serverId;
+    this.channel = channel;
     this.playerOwner = owner;
     this.players = [];
     this.players.push(owner);
+  }
+
+  getPlayer() {
+    return this.players[this.playerIndex];
   }
 
   joinPlayer(player) {
@@ -72,12 +74,26 @@ export default class Game extends EventEmitter {
     })
   }
 
-  stateHandler() {
+  start(player) {
+    return new Promise((resolve, reject) => {
+      if (player.id !== this.playerOwner.id) reject('Вы не владелец игры');
+      if (this.is_starting) {
+        reject('Игра уже началась');
+        return;
+      }
+
+      this.changeState(Starting);
+      this.is_starting = true;
+
+      resolve();
+    })
   }
 
   changeState(newState) {
-    this.stateHandler();
-    this.state = newState;
+    this.state = new newState();
+    this.state.game = this;
+    this.emit('changeState', newState);
+    this.state.cmd();
   }
 
   static findPlayer(playerId) {
@@ -106,15 +122,15 @@ export default class Game extends EventEmitter {
   }
 
   /**
-   * @param {number} serverId
+   * @param {TextChannel} channel
    * @param {User} owner
    */
-  static create(serverId, owner) {
+  static create(channel, owner) {
     return new Promise((resolve, reject) => {
       if (this.findPlayer(owner.id) !== -1) reject('Вы уже находитесь в другой игре');
 
-      const instance = new Game(serverId, owner);
-      this.#addGame(serverId, instance);
+      const instance = new Game(channel, owner);
+      this.#addGame(channel.guildId, instance);
 
       resolve(instance);
     })

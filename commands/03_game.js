@@ -78,7 +78,7 @@ const getListPlayer = (players) => {
 Command.add('создатьИгру', 'Данная команда создаст новую игру.', (client, message) => {
   const channelId = message.channelId;
 
-  Game.create(message.guildId, message.author)
+  Game.create(message.channel, message.author)
     .then((game) => {
       let listPlayers = getListPlayer(game.players);
 
@@ -148,6 +148,12 @@ Command.add('создатьИгру', 'Данная команда создас�
                   .catch((error) => {
                     sendMessageError(message.channel, buttonInteraction.user, error);
                   });
+                break;
+              case 'start':
+                game.start(buttonInteraction.user)
+                    .catch((error) => {
+                      sendMessageError(message.channel, buttonInteraction.user, error);
+                    });
                 break;
             }
 
