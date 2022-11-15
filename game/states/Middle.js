@@ -13,9 +13,10 @@ export default class Middle {
             if(message.channel !== this.game.channel) return;
             if(message.author.id !== this.game.getPlayer().id) return;
 
+            const firstLetter = message.content[0].toLowerCase();
             const letter = message.content.slice(-1).toLowerCase();
 
-            if (letter !== this.game.letter) return;
+            if (firstLetter !== this.game.letter) return;
             if (Game.blacklistLetters.indexOf(letter) !== -1) message.content.slice(-2);
 
             this.game.letter = letter
