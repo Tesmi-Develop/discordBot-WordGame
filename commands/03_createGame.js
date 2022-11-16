@@ -75,58 +75,87 @@ const getListPlayer = (players) => {
   return listPlayers
 }
 
-Command.add('создатьИгру', 'Данная команда создаст новую игру.', (client, message) => {
-  const channelId = message.channelId;
+const createActionRow = () => {
+  return Bot.createActionRow().addComponents(
+    Bot.createButton()
+      .setCustomId('join')
+      .setLabel('Присоединиться'),
+    Bot.createButton()
+      .setCustomId('join-2')
+      .setLabel('Присоединиться как гей'),
+    Bot.createButton()
+      .setCustomId('leave')
+      .setLabel('Покинуть'),
+    Bot.createButton()
+      .setCustomId('start')
+      .setLabel('Начать'),
+    Bot.createButton()
+      .setCustomId('remove')
+      .setLabel('Удалить'),
+  );
+}
 
+const createEmbedGame = (game, message) => {
+  const listPlayers = getListPlayer(game.players);
+
+  const embedDescription = Bot.createFields([
+    {
+      name: '➤ Владелец',
+      value: `<@${message.author.id}>`
+    },
+    {
+      name: '➤ Список игроков',
+      value: listPlayers
+    },
+    {
+      name: '➤ Уникальный номер',
+      value: `**${game.id}**`
+    }
+  ])
+
+  return Bot.createEmbed()
+    .setTitle('Игра успешно создана')
+    .setDescription(embedDescription);
+}
+
+const updateListPlayer = (buttonInteraction, embed, owner, game) => {
+  embed
+    .setDescription(Bot.createFields([
+      {
+        name: '➤ Владелец',
+        value: `<@${owner.id}>`
+      },
+      {
+        name: '➤ Список игроков',
+        value: getListPlayer(game.players)
+      },
+      {
+        name: '➤ Уникальный номер',
+        value: `**${game.id}**`
+      }
+    ]));
+
+  buttonInteraction.update({embeds: [embed]});
+}
+
+Command.add('создатьИгру', '', (client, message) => {
   Game.create(message.channel, message.author)
     .then((game) => {
-      let listPlayers = getListPlayer(game.players);
 
-      const row = Bot.createActionRow().addComponents(
-        Bot.createButton()
-          .setCustomId('join')
-          .setLabel('Присоединиться'),
-        Bot.createButton()
-          .setCustomId('join-2')
-          .setLabel('Присоединиться как гей'),
-        Bot.createButton()
-          .setCustomId('leave')
-          .setLabel('Покинуть'),
-        Bot.createButton()
-          .setCustomId('start')
-          .setLabel('Начать'),
-        Bot.createButton()
-          .setCustomId('delete')
-          .setLabel('Удалить'),
-      );
-
-      const embedDescription = Bot.createFields([
-        {
-          name: '➤ Владелец',
-          value: `<@${message.author.id}>`
-        },
-        {
-          name: '➤ Список игроков',
-          value: listPlayers
-        },
-        {
-          name: '➤ Уникальный номер',
-          value: `**${game.id}**`
-        }
-      ])
-
-      const embed = Bot.createEmbed()
-        .setTitle('Игра успешно создана')
-        .setDescription(embedDescription);
+      const row = createActionRow();
+      const embed = createEmbedGame(game, message);
 
       message.reply({ embeds: [embed], components: [row] })
         .then((reply) => {
           const collector = reply.createMessageComponentCollector();
 
-          collector.on('collect', async (buttonInteraction) => {
+          const collectorHandler = async (buttonInteraction) => {
             switch (buttonInteraction.customId) {
               case 'join':
                 game.joinPlayer(buttonInteraction.user)
+                  .then(() => {
+                    updateListPlayer(buttonInteraction, embed, message.author, game);
+                  })
                   .catch((error) => {
                     sendMessageError(message.channel, buttonInteraction.user, error);
                   });
@@ -134,6 +163,7 @@ Command.add('создатьИгру', 'Данная команда создас�
               case 'join-2':
                 game.joinPlayer(buttonInteraction.user)
                   .then(() => {
+                    updateListPlayer(buttonInteraction, embed, message.author, game);
                     sendSpecialMessageJoin(message.channel, buttonInteraction.user);
                   })
                   .catch((error) => {
@@ -143,7 +173,18 @@ Command.add('создатьИгру', 'Данная команда создас�
               case 'leave':
                 game.leave(buttonInteraction.user)
                   .then(() => {
+                    updateListPlayer(buttonInteraction, embed, message.author, game);
                     sendMessageLeave(message.channel, buttonInteraction.user);
+                  })
+                  .catch((error) => {
+                    sendMessageError(message.channel, buttonInteraction.user, error);
+                  });
+                break;
+              case 'remove':
+                game.remove(buttonInteraction.user)
+                  .then(() => {
+                    collector.removeListener('collect', collectorHandler);
+                    reply.delete();
                   })
                   .catch((error) => {
                     sendMessageError(message.channel, buttonInteraction.user, error);
@@ -151,30 +192,17 @@ Command.add('создатьИгру', 'Данная команда создас�
                 break;
               case 'start':
                 game.start(buttonInteraction.user)
-                    .catch((error) => {
-                      sendMessageError(message.channel, buttonInteraction.user, error);
-                    });
+                  .then(() => {
+                    console.log('Game starting');
+                  })
+                  .catch((error) => {
+                    sendMessageError(message.channel, buttonInteraction.user, error);
+                  });
                 break;
             }
+          }
 
-            embed
-              .setDescription(Bot.createFields([
-                {
-                  name: '➤ Владелец',
-                  value: `<@${message.author.id}>`
-                },
-                {
-                  name: '➤ Список игроков',
-                  value: getListPlayer(game.players)
-                },
-                {
-                  name: '➤ Уникальный номер',
-                  value: `**${game.id}**`
-                }
-              ]));
-
-            buttonInteraction.update({ embeds: [embed] });
-          })
+          collector.on('collect', collectorHandler);
         })
     })
     .catch((error) => {
@@ -183,4 +211,4 @@ Command.add('создатьИгру', 'Данная команда создас�
           .setTitle(error)
         ], ephemeral: true })
     })
-});
+})

@@ -11,7 +11,7 @@ export default class Game extends EventEmitter {
   is_starting = false;
 
   /**
-   * @param {Channel} channel
+   * @param {TextChannel} channel
    * @param {User} owner
    */
   constructor(channel, owner) {
@@ -76,7 +76,10 @@ export default class Game extends EventEmitter {
 
   start(player) {
     return new Promise((resolve, reject) => {
-      if (player.id !== this.playerOwner.id) reject('Вы не владелец игры');
+      if (player.id !== this.playerOwner.id) {
+        reject('Вы не владелец игры');
+        return;
+      }
       if (this.is_starting) {
         reject('Игра уже началась');
         return;
@@ -89,9 +92,21 @@ export default class Game extends EventEmitter {
     })
   }
 
+  remove(player) {
+    return new Promise((resolve, reject) => {
+      if (player.id !== this.playerOwner.id) reject('Вы не владелец игры');
+
+      const index = Game.games[this.channel.guildId].indexOf(this);
+      Game.games[this.channel.guildId].splice(index, 1);
+
+      if (this.state !== undefined) this.state.destroy();
+
+      resolve();
+    })
+  }
+
   changeState(newState) {
-    this.state = new newState();
-    this.state.game = this;
+    this.state = new newState(this);
     this.emit('changeState', newState);
     this.state.cmd();
   }
@@ -133,6 +148,22 @@ export default class Game extends EventEmitter {
       this.#addGame(channel.guildId, instance);
 
       resolve(instance);
+    })
+  }
+
+  static findGameById(serverId, id) {
+    if (this.games[serverId] === undefined) return -1;
+
+    return this.games[serverId].findIndex((value) => value.id === id);
+  }
+
+  static joinPlayer(player, serverId, gameId) {
+    return new Promise((resolve, reject) => {
+      const game = this.findGameById(serverId, gameId);
+
+      if (game === -1) reject('Данной игры не существует');
+
+      game.joinPlayer(player);
     })
   }
 }
