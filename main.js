@@ -45,7 +45,7 @@ export default class Bot {
       Command.execute(name, this.client, message, ...args.slice(1))
     });
     
-    await this.client.login(config.token);
+    await this.client.login(process.on.TOKEN);
     console.log('Login successful');
   }
 
