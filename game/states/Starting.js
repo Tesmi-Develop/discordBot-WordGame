@@ -9,9 +9,9 @@ export default class Starting {
         if (message.channel !== this.game.channel) return;
         if (message.content.startsWith(Config.comment)) return;
 
-        const letter = message.content.slice(-1).toLowerCase();
+        let letter = message.content.slice(-1).toLowerCase();
 
-        if (Game.blacklistLetters.indexOf(letter) !== -1) message.content.slice(-2);
+        if (Game.blacklistLetters.indexOf(letter) !== -1) letter = message.content.slice(-2)[0];
 
         this.game.letter = letter
         Bot.client.removeListener('messageCreate', this.callback);
