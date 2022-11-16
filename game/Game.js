@@ -4,7 +4,7 @@ import Starting from "./states/Starting.js";
 export default class Game extends EventEmitter {
   static #freeId = 0;
   static games = {};
-  static blacklistLetters = ['ь', 'ъ', 'й'];
+  static blacklistLetters = ['ь', 'ъ', 'й', 'ы'];
   playerIndex = -1;
   words = [];
   letter = '';
