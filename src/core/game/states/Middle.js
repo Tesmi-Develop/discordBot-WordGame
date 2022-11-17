@@ -1,6 +1,6 @@
 import Game from "../Game.js";
-import Bot from "../../main.js";
-import Config from "../../config.js";
+import Bot from "../../../../main.js";
+import Config from "../../../../config.js";
 
 export default class Middle {
     callback = (message) => {

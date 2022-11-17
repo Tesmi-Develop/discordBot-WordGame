@@ -1,9 +1,10 @@
 import process from 'node:process';
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, EmbedBuilder, GatewayIntentBits} from 'discord.js';
-import Command from './Command.js';
+import Command from './src/core/Command.js';
 import config from './config.js';
-import Data from './data.js';
+import Data from './data/Data.js';
 import fs from 'fs';
+import Utility from "./src/utilities/Utility.js";
 
 export default class Bot {
   static client = new Client({
@@ -14,6 +15,8 @@ export default class Bot {
       GatewayIntentBits.MessageContent
     ]
   });
+
+  static timeBeforeDeleteMessage = 5000;
 
   static async init() {
     await this.load();
@@ -45,15 +48,15 @@ export default class Bot {
       Command.execute(name, this.client, message, ...args.slice(1))
     });
     
-    await this.client.login(process.on.TOKEN);
+    await this.client.login(config.token);
     console.log('Login successful');
   }
 
   static async load() {
-    const files = fs.readdirSync('./commands');
+    const files = fs.readdirSync('./src/content/commands');
 
     for (const item of files) {
-        await import(`./commands/${item}`);
+        await import(`./src/content/commands/${item}`);
     }
   }
 
@@ -89,14 +92,30 @@ export default class Bot {
     message.delete();
   }
 
-  static createFields(fields) {
-    let fieldsString = '';
+  static sendMessageUserError(channel, user, userError) {
+    channel.send({ embeds: [Bot.createEmbed()
+        .setColor(Utility.colors.red)
+        .setTitle(`${user.username}. ${userError}`)
+        .setDescription(`<@${user.id}>`)
+      ], ephemeral: true })
+      .then((message) => {
+        setTimeout(() => {
+          message.delete();
+        }, this.timeBeforeDeleteMessage);
+      })
+  }
 
-    fields.forEach((element) => {
-      fieldsString += `**${element.name}**\n${element.value}\n`
-    })
-
-    return fieldsString;
+  static sendMessageInfoToUser(channel, user, title) {
+    channel.send({ embeds: [Bot.createEmbed()
+        .setColor(Utility.colors.blue)
+        .setTitle(title)
+        .setDescription(`<@${user.id}>`)
+      ], ephemeral: true })
+      .then((message) => {
+        setTimeout(() => {
+          message.delete();
+        }, this.timeBeforeDeleteMessage);
+      })
   }
 }
 

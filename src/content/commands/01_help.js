@@ -1,4 +1,4 @@
-import Command from '../Command.js';
+import Command from '../../core/Command.js';
 
 Command.add('хелп', 'Отображает все команды и описание к ним.', (client, message) => {
     let replyMessage = '> **Список всех команд**\n\n';

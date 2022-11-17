@@ -1,4 +1,4 @@
-import config from './config.js';
+import config from '../config.js';
 import fs from 'fs';
 
 export default class Data {
