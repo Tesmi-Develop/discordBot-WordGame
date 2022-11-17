@@ -1,7 +1,7 @@
 import process from 'node:process';
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, EmbedBuilder, GatewayIntentBits} from 'discord.js';
 import Command from './src/core/Command.js';
-import config from './config.js';
+import config from './config/config.js';
 import Data from './data/Data.js';
 import fs from 'fs';
 import Utility from "./src/utilities/Utility.js";

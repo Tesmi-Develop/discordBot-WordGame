@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import Starting from "./states/Starting.js";
-import userErrors from "../../content/userErrors.js";
+import gameError from "../../../config/gameError.js";
 
 export default class Game extends EventEmitter {
   static #freeId = 0;
@@ -28,8 +28,8 @@ export default class Game extends EventEmitter {
   }
 
   join(player) {
-    if (this.findPlayer(player.id) !== -1) return userErrors.joinedInThisGame;
-    if (Game.findPlayer(player.id) !== -1) return userErrors.joinedInGame;
+    if (this.findPlayer(player.id) !== -1) return gameError.joinedInThisGame;
+    if (Game.findPlayer(player.id) !== -1) return gameError.joinedInGame;
     this.players.push(player);
   }
 
@@ -42,9 +42,9 @@ export default class Game extends EventEmitter {
    * @param {User} playerOnKick
    */
   kick(player, playerOnKick) {
-    if (this.playerOwner.id !== player.id) return userErrors.notOwner;
-    if (this.findPlayer(playerOnKick.id) === -1) return userErrors.missingGame;
-    if (this.playerOwner.id === playerOnKick.id) return userErrors.kickSelf;
+    if (this.playerOwner.id !== player.id) return gameError.notOwner;
+    if (this.findPlayer(playerOnKick.id) === -1) return gameError.missingGame;
+    if (this.playerOwner.id === playerOnKick.id) return gameError.kickSelf;
 
     const indexPlayer = this.findPlayer(playerOnKick.id);
 
@@ -55,8 +55,8 @@ export default class Game extends EventEmitter {
    * @param {User} playerOnLeave
    */
   leave(playerOnLeave) {
-    if (this.playerOwner.id === playerOnLeave.id) return userErrors.cantLeaveHisGame;
-    if (this.findPlayer(playerOnLeave.id) === -1) return userErrors.missingGame;
+    if (this.playerOwner.id === playerOnLeave.id) return gameError.cantLeaveHisGame;
+    if (this.findPlayer(playerOnLeave.id) === -1) return gameError.missingGame;
 
     const indexPlayer = this.findPlayer(playerOnLeave.id);
 
@@ -64,15 +64,15 @@ export default class Game extends EventEmitter {
   }
 
   start(player) {
-    if (player.id !== this.playerOwner.id) return userErrors.notOwner ;
-    if (this.is_starting) return userErrors.gameStarted;
+    if (player.id !== this.playerOwner.id) return gameError.notOwner ;
+    if (this.is_starting) return gameError.gameStarted;
 
     this.changeState(Starting);
     this.is_starting = true;
   }
 
   remove(player) {
-    if (player.id !== this.playerOwner.id) return userErrors.notOwner;
+    if (player.id !== this.playerOwner.id) return gameError.notOwner;
 
     const index = Game.games[this.channel.guildId].indexOf(this);
     Game.games[this.channel.guildId].splice(index, 1);
@@ -130,7 +130,7 @@ export default class Game extends EventEmitter {
    * @param {User} owner
    */
   static create(channel, owner) {
-    if (this.findPlayer(owner.id) !== -1) return userErrors.joinedInGame;
+    if (this.findPlayer(owner.id) !== -1) return gameError.joinedInGame;
 
     const instance = new Game(channel, owner);
     this.#addGame(channel.guildId, instance);
@@ -147,7 +147,7 @@ export default class Game extends EventEmitter {
   static joinPlayer(player, serverId, gameId) {
     const game = this.findGameById(serverId, gameId);
 
-    if (game === -1) return userErrors.gameNotFounded;
+    if (game === -1) return gameError.gameNotFounded;
 
     game.joinPlayer(player);
   }

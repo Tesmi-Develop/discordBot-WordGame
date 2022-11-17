@@ -1,10 +1,10 @@
 import Command from '../../core/Command.js';
 import Bot from '../../../main.js';
 import Game from '../../core/game/Game.js';
-import titles from "../titles.js";
-import Utility from "../../utilities/Utility.js";
+import gameReplice from '../../../config/gameAnswer.js';
+import Utility from '../../utilities/Utility.js';
 
-const buttons = {
+const buttonId = {
   join: 'join',
   specialJoin: 'join-2',
   leave: 'leave',
@@ -15,19 +15,19 @@ const buttons = {
 const createActionRow = () => {
   return Bot.createActionRow().addComponents(
     Bot.createButton()
-      .setCustomId(buttons.join)
+      .setCustomId(buttonId.join)
       .setLabel('Присоединиться'),
     Bot.createButton()
-      .setCustomId(buttons.specialJoin)
+      .setCustomId(buttonId.specialJoin)
       .setLabel('Присоединиться как гей'),
     Bot.createButton()
-      .setCustomId(buttons.leave)
+      .setCustomId(buttonId.leave)
       .setLabel('Покинуть'),
     Bot.createButton()
-      .setCustomId(buttons.start)
+      .setCustomId(buttonId.start)
       .setLabel('Начать'),
     Bot.createButton()
-      .setCustomId(buttons.remove)
+      .setCustomId(buttonId.remove)
       .setLabel('Удалить'),
   );
 }
@@ -55,76 +55,75 @@ const createEmbedGame = (game) => {
     .setDescription(embedDescription);
 }
 
-const updatePlayers = (game, message, messageContent) => {
-  const embed = createEmbedGame(game);
-  messageContent.embeds = [embed];
-  message.edit(messageContent);
-}
-
 Command.add('создатьИгру', 'Команда создаёт новую игру', (client, message) => {
   const game = Game.create(message.channel, message.author)
 
   const row = createActionRow();
-  const embed = createEmbedGame(game, message);
-  const messageContent = { embeds: [embed], components: [row] };
+  const embed = createEmbedGame(game);
+  const messageOptions = { embeds: [embed], components: [row] };
 
-  message.reply(messageContent)
+  message.reply(messageOptions)
     .then((reply) => {
       const collector = reply.createMessageComponentCollector();
 
       collector.on('collect', async (buttonInteraction) => {
         let error;
+        const { customId, user } = buttonInteraction;
+        const { channel } = reply;
 
-        switch (buttonInteraction.customId) {
-          case buttons.join:
-            error = game.join(buttonInteraction.user);
+        const updateMessage = () => {
+          const embed = createEmbedGame(game);
+          messageOptions.embeds = [embed];
+          message.edit(messageOptions);
+        }
+
+        const sendMessageInfoToUser = (info) => {
+          Bot.sendMessageInfoToUser(channel, user, info);
+        }
+
+        const sendMessageUserError = (error) => {
+          Bot.sendMessageUserError(channel, user, error);
+        }
+        
+        switch (customId) {
+          case buttonId.join:
+          case buttonId.specialJoin:
+            error = game.join(user);
             if (error) {
-              Bot.sendMessageUserError(reply.channel, buttonInteraction.user, error);
-              return;
+              sendMessageUserError(error);
+              break;
             }
 
-            Bot.sendMessageInfoToUser(reply.channel, buttonInteraction.user, titles.join);
-            updatePlayers(game, reply, messageContent);
-
+            sendMessageInfoToUser(customId === buttonId.join ? gameReplice.join :gameReplice.specialJoin);
+            updateMessage();
             break;
-          case buttons.specialJoin:
-            error = game.join(buttonInteraction.user);
+            
+          case buttonId.leave:
+            error = game.leave(user);
             if (error) {
-              Bot.sendMessageUserError(reply.channel, buttonInteraction.user, error);
-              return;
+              sendMessageUserError(error);
+              break;
             }
 
-            Bot.sendMessageInfoToUser(reply.channel, buttonInteraction.user, titles.specialJoin);
-            updatePlayers(game, reply, messageContent);
-
+            sendMessageInfoToUser(gameReplice.leave);
+            updateMessage();
             break;
-          case buttons.leave:
-            error = game.leave(buttonInteraction.user);
+            
+          case buttonId.remove:
+            error = game.remove(user);
             if (error) {
-              Bot.sendMessageUserError(reply.channel, buttonInteraction.user, error);
-              return;
-            }
-
-            Bot.sendMessageInfoToUser(reply.channel, buttonInteraction.user, titles.leave);
-            updatePlayers(game, reply, messageContent);
-
-            break;
-          case buttons.remove:
-            error = game.remove(buttonInteraction.user);
-            if (error) {
-              Bot.sendMessageUserError(reply.channel, buttonInteraction.user, error);
-              return;
+              sendMessageUserError(error);
+              break;
             }
 
             reply.delete();
-
             break;
-          case buttons.start:
-            error = game.start(buttonInteraction.user);
-            if (error) {
-              Bot.sendMessageUserError(reply.channel, buttonInteraction.user, error);
-            }
 
+          case buttonId.start:
+            error = game.start(user);
+            if (error) {
+              sendMessageUserError(error);
+            }
             break;
         }
       });

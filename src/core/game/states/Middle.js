@@ -1,9 +1,18 @@
 import Game from "../Game.js";
 import Bot from "../../../../main.js";
-import Config from "../../../../config.js";
+import Config from "../../../../config/config.js";
 
 export default class Middle {
-    callback = (message) => {
+    constructor(game) {
+        this.game = game;
+    }
+
+    cmd() {
+        this.nextPlayer();
+        Bot.client.on('messageCreate', this.callback.bind(this));
+    }
+
+    callback(message) {
         if (message.author.bot) return;
         if (message.channel !== this.game.channel) return;
         if (message.author.id !== this.game.getPlayer().id) return;
@@ -22,15 +31,6 @@ export default class Middle {
         this.game.letter = letter
         this.game.words.push(message.content);
         this.nextPlayer();
-    }
-
-    constructor(game) {
-        this.game = game;
-    }
-
-    cmd() {
-        this.nextPlayer();
-        Bot.client.on('messageCreate', this.callback);
     }
 
     destroy() {
