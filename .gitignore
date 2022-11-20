@@ -106,3 +106,5 @@ dist
 # Data
 .json
 data.json
+
+.config/config.js

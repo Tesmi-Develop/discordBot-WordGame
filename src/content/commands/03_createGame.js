@@ -74,7 +74,7 @@ Command.add('создатьИгру', 'Команда создаёт новую 
         const updateMessage = () => {
           const embed = createEmbedGame(game);
           messageOptions.embeds = [embed];
-          message.edit(messageOptions);
+          reply.edit(messageOptions);
         }
 
         const sendMessageInfoToUser = (info) => {
